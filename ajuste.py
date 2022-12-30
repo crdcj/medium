@@ -16,12 +16,14 @@ def ajustar_precos(df_precos: pd.DataFrame, df_divs: pd.DataFrame) -> pd.DataFra
     """
     # Copiar os dataFrames para não alterar os originais
     precos = df_precos.copy()
-    divs = df_divs.copy()
+    divs = df_divs[["data_com", "valor_div"]].copy()
 
     # Ajustar as datas de dividendos para que a data tenha tido necessariamente negociação
     divs["data_com"] = divs["data_com"].apply(
         lambda x: precos.query("data <= @x")["data"].max()
     )
+    # Agrupar dividendos na mesma data e somar os valores
+    divs = divs.groupby("data_com", as_index=False).sum().reset_index(drop=True)
     # Incorporar os dados de dividendos em precos
     precos = precos.merge(divs, how="left", left_on="data", right_on="data_com")
     # A coluna "data_com" não é mais necessária
